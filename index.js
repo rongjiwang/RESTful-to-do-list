@@ -77,7 +77,7 @@ var pg = require('pg').native;
 var connectionString = process.env.DATABASE_URL;
 var client = new pg.Client(connectionString);
 client.connect();
-app.get('/', function(req, res) {
+app.get('/db', function(req, res) {
     var date = new Date();
 
     query = client.query('select * from todo;');
@@ -88,7 +88,7 @@ app.get('/', function(req, res) {
         if (!result) {
             return res.send('No data found');
         } else {
-            res.send('Visits today: ' + result.count);
+            res.send('Visits today: ' + result);
         }
     });
 });
