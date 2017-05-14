@@ -77,16 +77,19 @@ var pg = require('pg').native;
 var connectionString = process.env.DATABASE_URL;
 var client = new pg.Client(connectionString);
 client.connect();
-app.get('/db', function (request, response) {
-    pg.connect(connectionString, function(err, client, done) {
-        client.query('SELECT * FROM todo', function(err, result) {
-            done();
-            console.log('test_test');
-            if (err)
-            { console.error(err); response.send("Error " + err); }
-            else
-            { response.send({results: result.rows} ); }
-        });
+app.get('/', function(req, res) {
+    var date = new Date();
+
+    query = client.query('select * from todo;');
+
+    query.on('row', function(result) {
+        console.log(result);
+
+        if (!result) {
+            return res.send('No data found');
+        } else {
+            res.send('Visits today: ' + result.count);
+        }
     });
 });
 
