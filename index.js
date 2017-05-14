@@ -85,7 +85,7 @@ app.get('/db', function (request, response) {
             if (err)
             { console.error(err); response.send("Error " + err); }
             else
-            { response.render({results: result.rows} ); }
+            { response.send({results: result.rows} ); }
         });
     });
 });
