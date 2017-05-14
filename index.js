@@ -78,14 +78,14 @@ var connectionString = process.env.DATABASE_URL;
 var client = new pg.Client(connectionString);
 client.connect();
 app.get('/db', function (request, response) {
-    pg.connect(process.env.DATABASE_URL, function(err, client, done) {
+    pg.connect(connectionString, function(err, client, done) {
         client.query('SELECT * FROM todo', function(err, result) {
             done();
             console.log('test_test');
             if (err)
             { console.error(err); response.send("Error " + err); }
             else
-            { response.render('pages/db', {results: result.rows} ); }
+            { response.render({results: result.rows} ); }
         });
     });
 });
