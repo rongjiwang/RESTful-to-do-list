@@ -73,10 +73,10 @@ app.delete('/del/:id', function(req,res){
     //console.log(plainData);
 
 //===================Postgres Database==========
-var pg = require('pg');
-//var connectionString = process.env.DATABASE_URL;
-//var client = new pg.Client(connectionString);
-//client.connect();
+var pg = require('pg').native;
+var connectionString = process.env.DATABASE_URL;
+var client = new pg.Client(connectionString);
+client.connect();
 app.get('/db', function (request, response) {
     pg.connect(process.env.DATABASE_URL, function(err, client, done) {
         client.query('SELECT * FROM todo', function(err, result) {
