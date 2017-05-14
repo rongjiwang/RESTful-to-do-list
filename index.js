@@ -81,6 +81,7 @@ app.get('/db', function (request, response) {
     pg.connect(process.env.DATABASE_URL, function(err, client, done) {
         client.query('SELECT * FROM todo', function(err, result) {
             done();
+            console.log('test_test');
             if (err)
             { console.error(err); response.send("Error " + err); }
             else
