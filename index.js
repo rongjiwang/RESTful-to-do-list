@@ -15,15 +15,21 @@ client = new pg.Client(connectionString);
 client.connect();
 
 //====================States===================
-app.use(express.static(__dirname +'/project1'));
+app.use(express.static(__dirname +'/public'));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 //===================GET Request===============
-//client.query("INSERT INTO todo VALUES (default, 'report', '9pages', true)");
 
+//Root
 app.get('/', function(req,res){
-    /*    const results = [];
+    res.render('index');
+});
+
+//Show all data
+app.get('/all', function(req,res){
+    const results = [];
+    //Get a Postgres client from the connection pool
     pg.connect(connectionString, (err,client,done) => {
         //Handle connection errors
         if(err){
@@ -31,35 +37,27 @@ app.get('/', function(req,res){
             console.log(err);
             return res.status(500).json({success: false, data: err});
         }
-        //SQL Query > Select Data
-        console.log('No error');
-        const query = client.query("INSERT INTO todo_list VALUES (default, 'report', '90pages', true)");
-        query.on('row', (row) =>{
-            results.push(row);
-        });
-        //Return data, close connection
-        query.on('end', () =>{
-            done();
-            return res.json(results);
-    });
-});*/
-   client.query("INSERT INTO todo VALUES (default, 'report', '90pages', true)");
-
-    res.render('index');
+        // SQL Query > Select Data
+        var query = client.query('SELECT * FROM todo');
+        //Stream results back one row at a time
+    query.on('row', (row) => {
+        results.push(row);
+});
+    // After all data is returned, close connection and return results
+    query.on('end', () => {
+        done();
+    return res.json(results);
+});
+});
 });
 
-//show all data
-app.get('/all', function(req,res){
-    res.send(plainData);
-
-});
 //quick search data by id
-app.get('/:id', function(req,res){
+/*app.get('/:id', function(req,res){
     var _id = req.params.id;
     //console.log(plainData[_id]);
     res.send(plainData[_id]);
 
-});
+});*/
 
 //add data from url
 app.get('/add/:job/:description', function(req,res){
@@ -86,10 +84,39 @@ app.get('/add/:job/:description', function(req,res){
 
 
 //===================POST Request=================
-app.post('/insert', function(req,res){
-    console.log(req.body.job+' 123');
-    client.query("INSERT INTO todo VALUES (default, 'report', '99pages', true)");
-    res.send(plainData);
+app.post('/todo', (req,res,next) => {
+    const results = [];
+    //Grab data from http request
+    const data = {
+        job : req.body.job,
+        description: req.body.description,
+        is_finished: req.body.is_finished
+    };
+    pg.connect(connectionString, (err, client, done) =>{
+        //Handle connection errors
+        if(err){
+            done();
+            console.log(err);
+            return res.status(500).json({success: false, data: err});
+        }
+        // SQL Query > Insert Data
+        client.query('INSERT INTO todo VALUES (DEFAULT, $1, $2, $3)',
+            [data.job, data.description, data.is_finished]);
+        // SQL Query > Select All
+        const query = client.query('SELECT * FROM todo');
+        // Stream results back one row at a time
+        query.on('row', (row)=>{
+            results.push(row);
+        });
+        //After all data is returned, close connection and return results
+        query.on('end', ()=>{
+            done();
+            return res.json(results);
+        });
+    });
+    //console.log(req.body.job+' 123');
+    //client.query("INSERT INTO todo VALUES (default, 'report', '99pages', true)");
+    //res.send(plainData);
 });
 
 //===================DELETE Request===============
@@ -98,33 +125,14 @@ app.delete('/del/:id', function(req,res){
     res.send(req.params.id);
 });
 
-//===================Local Temp Database==========
+//===================Local Temp Database(local testing)==========
 
-    var rawData = fs.readFileSync('database.json');
-    var plainData = JSON.parse(rawData);
+    //var rawData = fs.readFileSync('database.json');
+    //var plainData = JSON.parse(rawData);
     //console.log(plainData);
 
 //===================Postgres Database==========
 
-//console.log(connectionString);
-
-//const query = client.query('CREATE TABLE item(id SERIAL PRIMARY KEY, text VARCHAR(40) not null, complete BOOLEAN)');
-//query.on('end', () => { client.end(); });
-
-/*app.get('/dbs', function(req, res) {
-    const results = [];
-    const query = client.query("insert into todo_list values(default, 'report', '9pages', true)");
-    //query = client.query("select * from todo_list");
-    console.log(query);
-    query.on('row', function(row) {
-        results.push(row);
-        console.log(row+'0');
-    });
-    query.on('end', () => {
-        done();
-        return res.json(results);
-    });
-});*/
 
 
 //===================Server Start=================

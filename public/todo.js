@@ -15,9 +15,10 @@ $(document).ready(function (e) {
                 }
                 var item = {
                     job:taskName,
-                    description: ''
+                    description: '',
+                    is_finished: false
                 };
-                $.post('/insert',item, function(data, status){
+                $.post('/todo',item, function(data, status){
 
                     console.log(data[2].id+' 000');
                     console.log(item);
@@ -142,16 +143,8 @@ function setup(){
             // $newTask.hide();
 
             $('#todo-list').prepend($newTask);
-            console.log('My array has at position ' + ', this value: ' +data[k].job);
+            //console.log('My array has at position ' + ', this value: ' +data[k].job);
         };
-
-       // $newTask.find('.task').text(data[0].job);
-
-        // $newTask.hide();
-
-        //$('#todo-list').prepend($newTask);
-        console.log('running');
-        console.log(data);
 
     });
 }
