@@ -80,10 +80,16 @@ app.get('/todo', (req,res,next)=>{
 app.post('/todo', (req,res,next) => {
     const results = [];
     //Grab data from http request
+    var _job = req.body.job,
+        _description =req.body.description,
+        _is_finished = req.body.is_finished;
+    if(_job == null){_job = 'DEFAULT';}
+    if(_description == null){_description = 'DEFAULT';}
+    if(_is_finished == null){_is_finished = false;}
     const data = {
-        job : req.body.job,
-        description: req.body.description,
-        is_finished: req.body.is_finished
+        job : _job,
+        description: _description,
+        is_finished: _is_finished
     };
     pg.connect(connectionString, (err, client, done) =>{
         //Handle connection errors
@@ -140,7 +146,7 @@ app.put('/todo/:id',function(req,res,next){
         query.on('end', ()=>{
             done();
             console.log('[OK] The item has been updated.');
-            return res.status(200).json({success: true, data: results});
+            return res.json(results);
         })
     });
 
@@ -148,6 +154,7 @@ app.put('/todo/:id',function(req,res,next){
 
 //===================DELETE Request===============
 app.delete('/todo/:id', function(req,res,next){
+    var results = [];
     //Grab data from the URL parameters
     var id = req.params.id;
     //Get a Postgres client from the connection pool
@@ -159,12 +166,17 @@ app.delete('/todo/:id', function(req,res,next){
             return res.status(500).json({success: false, data: err});
         }
         // SQL Query > Delete Data
-        var query = client.query('DELETE FROM todo where id=($1)',[id]);
+        client.query('DELETE FROM todo where id=($1)',[id]);
+        const query = client.query('SELECT * FROM todo');
+        // Stream results back one row at a time
+        query.on('row', (row)=>{
+            results.push(row);
+        });
         // Close the connection
         query.on('end', ()=>{
             done();
             console.log('[OK] The item has been deleted.');
-            return res.status(200).json({success: true});
+            return res.json(results);
         });
     });
 });
