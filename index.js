@@ -26,8 +26,9 @@ app.get('/', function(req,res){
 });
 
 //Show all data in plain text
-app.get('/all', function(req,res){
+app.get('/todo/:id', function(req,res){
     const results = [];
+    var id = req.params.id;
     //Get a Postgres client from the connection pool
     pg.connect(connectionString, (err,client,done) => {
         //Handle connection errors
@@ -37,7 +38,7 @@ app.get('/all', function(req,res){
             return res.status(500).json({success: false, data: err});
         }
         // SQL Query > Select Data
-        var query = client.query('SELECT * FROM todo');
+        var query = client.query('SELECT * FROM todo WHERE id=($1)',[id]);
         //Stream results back one row at a time
     query.on('row', (row) => {
         results.push(row);
