@@ -10,7 +10,6 @@ const connectionString = process.env.DATABASE_URL || "postgres://localhost:5432/
 var port = process.env.PORT || 8080;
 var client;
 var app = express();
-
 client = new pg.Client(connectionString);
 client.connect();
 
@@ -26,7 +25,7 @@ app.get('/', function(req,res){
     res.render('index');
 });
 
-//Show all data
+//Show all data in plain text
 app.get('/all', function(req,res){
     const results = [];
     //Get a Postgres client from the connection pool
@@ -51,37 +50,30 @@ app.get('/all', function(req,res){
 });
 });
 
-//quick search data by id
-/*app.get('/:id', function(req,res){
-    var _id = req.params.id;
-    //console.log(plainData[_id]);
-    res.send(plainData[_id]);
-
-});*/
-
-//add data from url
-app.get('/add/:job/:description', function(req,res){
-    var _job = req.params.job;
-    var _description = req.params.description;
-    //create new data object
-    var _new = {
-        "id": plainData.length,
-        "job": _job,
-        "description": _description,
-        "status": "todo"
-    };
-    //add into database file
-    plainData.push(_new);
-    var da = JSON.stringify(plainData, null, 2);
-    //write into database file
-    fs.writeFile('database.json', da, function(){
-        console.log('all set ');
-
+//SETUP all data from database to front end
+app.get('/todo', (req,res,next)=>{
+    const results = [];
+    // Get a Postgres client from the connection pool
+    pg.connect(connectionString, (err, client, done) =>{
+        // Handle connection errors
+        if(err){
+            done();
+            console.log(err);
+            return res.status(500).json({success: false, data: err});
+        }
+        // SQL Query > Select Data
+        const query = client.query('SELECT * FROM todo');
+        // Stream results back one row at a time
+        query.on('row', (row)=>{
+            results.push(row);
+        });
+        // After all data is returned, close connection and return results
+        query.on('end', ()=>{
+            done();
+            return res.json(results);
+        });
     });
-
-    res.send(plainData);
 });
-
 
 //===================POST Request=================
 app.post('/todo', (req,res,next) => {
@@ -100,10 +92,9 @@ app.post('/todo', (req,res,next) => {
             return res.status(500).json({success: false, data: err});
         }
         // SQL Query > Insert Data
-        client.query('INSERT INTO todo VALUES (DEFAULT, $1, $2, $3)',
+        var query = client.query('INSERT INTO todo(id, job, description, is_finished) VALUES (DEFAULT, $1, $2, $3) RETURNING id',
             [data.job, data.description, data.is_finished]);
         // SQL Query > Select All
-        const query = client.query('SELECT * FROM todo');
         // Stream results back one row at a time
         query.on('row', (row)=>{
             results.push(row);
@@ -111,18 +102,70 @@ app.post('/todo', (req,res,next) => {
         //After all data is returned, close connection and return results
         query.on('end', ()=>{
             done();
+            console.log('[OK] The item has been added.');
             return res.json(results);
         });
     });
-    //console.log(req.body.job+' 123');
-    //client.query("INSERT INTO todo VALUES (default, 'report', '99pages', true)");
-    //res.send(plainData);
+});
+
+//===================UPDATE Request===============
+app.put('/todo/:id',function(req,res,next){
+    const results = [];
+    //Grab data from the URL parameters
+    var id_update = req.params.id;
+    console.log(id_update);
+    //Grab data from http request
+    const data = {job: req.body.job, description: req.body.description, is_finished:req.body.is_finished};
+    //Get a Postgres client from the connection pool
+    pg.connect(connectionString, (err, client, done)=>{
+        //Handle connection errors
+        if(err){
+            done();
+            console.log(err);
+            return res.status(500).json({success: false, data: err});
+        }
+        if(data.is_finished){
+            console.log(data.is_finished);
+        }
+        //SQL Query > Update Data
+        client.query('UPDATE todo SET job=($1), description=($2), is_finished=($3) WHERE id=($4)',
+            [data.job, data.description, data.is_finished, id_update]);
+        const query = client.query('SELECT * FROM todo');
+        // Stream results back one row at a time
+        query.on('row', (row)=>{
+            results.push(row);
+        });
+        // After all data is returned, close connection and return results
+        query.on('end', ()=>{
+            done();
+            console.log('[OK] The item has been updated.');
+            return res.status(200).json({success: true, data: results});
+        })
+    });
+
 });
 
 //===================DELETE Request===============
-app.delete('/del/:id', function(req,res){
-    //delete plainData[req.params.id];
-    res.send(req.params.id);
+app.delete('/todo/:id', function(req,res,next){
+    //Grab data from the URL parameters
+    var id = req.params.id;
+    //Get a Postgres client from the connection pool
+    pg.connect(connectionString, (err, client, done) =>{
+        //Handle connection errors
+        if(err){
+            done();
+            console.log(err);
+            return res.status(500).json({success: false, data: err});
+        }
+        // SQL Query > Delete Data
+        var query = client.query('DELETE FROM todo where id=($1)',[id]);
+        // Close the connection
+        query.on('end', ()=>{
+            done();
+            console.log('[OK] The item has been deleted.');
+            return res.status(200).json({success: true});
+        });
+    });
 });
 
 //===================Local Temp Database(local testing)==========
@@ -130,10 +173,6 @@ app.delete('/del/:id', function(req,res){
     //var rawData = fs.readFileSync('database.json');
     //var plainData = JSON.parse(rawData);
     //console.log(plainData);
-
-//===================Postgres Database==========
-
-
 
 //===================Server Start=================
 app.listen(port, function(){
