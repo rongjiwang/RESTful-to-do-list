@@ -33,7 +33,9 @@ $(document).ready(function (e) {
 
                 taskHTML += '<span class="task"></span>';
 
-                taskHTML += '<span class="name"></span></li>';
+                taskHTML += '<span class="name"></span>';
+
+                taskHTML += '<span class="id"></span></li>';
 
                 var $newTask = $(taskHTML);
                 $newTask.find('.task').text(taskName);
@@ -74,6 +76,7 @@ $(document).ready(function (e) {
     //==================Delete A Job===============
     $('.sortlist').on('click', '.delete', function () {
         var _this = (this);
+        console.log(_this);
         //dialog box setup
         $('#confirm-box').attr('title', 'Confirm deletion').html("Do you want<br>to confirm<br>deletion?").dialog({
             modal: true, autoOpen: true, buttons: {
@@ -99,6 +102,7 @@ $(document).ready(function (e) {
         //how existing value in input-box
         $('#taskE').val($(this).parent().find('.task').text());
         $('#nameE').val($(this).parent().find('.name').text());
+        //console.log($(this).parent().find('.id').text());
 
         $('#name-edit').dialog({
             modal: true, autoOpen: true, buttons: {
@@ -122,6 +126,7 @@ $(document).ready(function (e) {
 }); // end ready
 
 //==================Load LIST From Database===============
+//P5
 function setup(){
     loadJSON('all', function(data){
         // add a tick
@@ -133,16 +138,23 @@ function setup(){
 
         taskHTML += '<span class="task"></span>';
 
-        taskHTML += '<span class="name"></span></li>';
+        taskHTML += '<span class="name"></span>';
+
+        taskHTML += '<span class="id"></span></li>';
 
         for(var k in data){
             var $newTask = $(taskHTML);
-
+            // assign attributes
             $newTask.find('.task').text(data[k].job);
+            $newTask.find('.name').text(data[k].description);
+            $newTask.find('.id').text(data[k].id).hide();
 
-            // $newTask.hide();
-
-            $('#todo-list').prepend($newTask);
+            if(data[k].is_finished) {
+                $('#completed-list').prepend($newTask);
+            }
+            else{
+                $('#todo-list').prepend($newTask);
+            }
             //console.log('My array has at position ' + ', this value: ' +data[k].job);
         };
 
